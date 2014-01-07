@@ -2,9 +2,11 @@
 
 body {
   padding:50px;
-  font:14px/1.5 Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Courier New', Verdana, Arial;
   color:#777;
   font-weight:300;
+  background-image: url('../images/paper.png');
+  background-position: 50%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -21,11 +23,13 @@ h1, h2, h3 {
 }
 
 h1 {
-  font-size:28px;
+	font-size:28px;
+	border-bottom: 7px solid #b00;
 }
 
 h2 {
-  color:#393939;
+	border-bottom: 2px solid #b00;
+	color:#393939;
 }
 
 h3, h4, h5, h6 {
