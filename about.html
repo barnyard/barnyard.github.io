@@ -18,69 +18,78 @@
 			scalable, highly robust software applications and services.
 		</p>
 		<p>
-			Many products claim to offer these capabilities, usually ‘magically’ - 'just write your app,
-			and we'll make it scale'. Pi is different in that it explicitly defines its own choice of
-			tradeoffs needed to achieve scale and resilience, recommends patterns for implementing these 
-			tradeoffs, and provides APIs to facilitate and guide that implementation.
+			Pi is of course not alone in seeking to offer these capabilities. Rather than striving for
+			‘magical’ approach - 'just write your app, and we'll make it scale', the approach Pi takes
+			is to explicitly define a 'menu' of tradeoffs needed to achieve scale and resilience,
+			recommend patterns for implementing these tradeoffs, and provide APIs to facilitate
+			and guide that implementation. It is our belief that, when scale and resilience
+			matter, abstractions should be a means of convenience rather than blissful ignorance.   
 		</p>
 		<p>
-			Pi Cloud is the first set of services developed on Pi. It provides de-facto standard, Amazon-compatible
-			infrastructure-as-a-service (IaaS) APIs to compute and storage services.
+			Pi Cloud is the first set of services developed on Pi. It provides de-facto standard
+			infrastructure-as-a-service (IaaS) compute and storage services API-compatible with
+			Amazon's EC2 and S3. Pi Cloud pre-dated OpenStack by a couple of years, and came into
+			being when other similar offerings were woefully inadequate. 
 		</p>
 		<p>
-			The creation of Pi has been driven by the need to provide an IaaS platform to underpin BT’s cloud
-			offering. This meant building a distributed system with a large number of nodes from the outset,
-			as each node would only support a finite number of virtual machine instances, finite storage,
-			and finite bandwidth. As an infrastructure platform, it also placed demanding requirements on
-			the resilience.
+			Its creation was driven by the need to provide an IaaS platform to shape, evolve and
+			ultimately underpin the strategic ambitions of a major technology company seeking to offer
+			its customers first-rate networked software services. This meant building a distributed
+			system with a large number of nodes from the outset, as each node would only support a finite
+			number of virtual machine instances, finite storage, and finite bandwidth. As an
+			infrastructure platform, it also placed demanding requirements on the resilience.
 		</p>
 		
 		<h2>
 			Anatomy of Pi
 		</h2>
 		<p>
-			Pi has a distributed, decentralized architecture, as a way of achieving the necessary scale.
-			Pi nodes - each with its own unique identifier - form a ring of peers (a structured p2p overlay),
-			with each node tracking a set of peers (its ‘leaf set’). This organisation is very powerful in that
+			Naturally, Pi has a distributed, decentralized architecture, as a way of achieving these goals.
+			Its foundation borrows heavily from peer-to-peer and specifically distributed hashtable (DHT)
+			paradigms. Pi nodes - each with its own unique identifier - form a ring of peers (a structured p2p
+			overlay), with each node tracking a set of peers. A core appeal of this organisation is that
 			it allows one node to route a message to another via a bounded number of intermediate nodes; thus by
-			mapping resources (such as pieces of data or services) to identifiers, nodes can locate and access
+			mapping resources (such as data or services) to identifiers, nodes can locate and access
 			those resources without having to have specific knowledge (addresses, routing etc) of how to access them.
 		</p>
 		<p>
-			The structured p2p overlay is currently provided by the Pastry library, which organizes nodes into
-			a ring, provides message routing and delivery, and exposes message-related and node-related events to
-			applications.
+			The initial implementation of the structured p2p overlay / DHT was provided by by the FreePastry
+			library, which takes care of organising nodes into a ring, providing message routing and delivery,
+			and exposes events relating to messaging and node lifecycle to applications.
 		</p>
 		<p>
 			Above Pastry sits Pi Core, the p2p application framework that provides developer-friendly APIs for
-			application creation, messaging, data access and management, and much more. It also abstracts Pastry away.
+			application creation, messaging, data access and management, and much more. It also abstracts away
+			the specific DHT implementation provided by Pastry.
 		</p>
 		<p>
-			Pi Cloud services are implemented as a series of Pi applications, starting with a common app that defines
-			the shared data entities, followed by applications for network, volume, image, storage and management,
-			and the API application which exposes the APIs. These applications are then packaged together to form
-			a deployable artifact – in the case of Pi Cloud, a RPM package. This artifact is generally deployed on
-			each node, and is run as a single process instance (JVM).
+			Pi Cloud services are implemented as a series of Pi applications, starting with a shared module that
+			defines the shared data entities, followed by applications for network, volume, image, storage and
+			management, and finally the API application which exposes the APIs. These applications are then packaged
+			together to form a deployable artifact – in the case of Pi Cloud, a RPM package - to be deployed on
+			each server node, and run in a single JVM instance.
 		</p>
 		<p>
-			Pi is written in Java, utilising the Spring Framework. There are certain platform-specific aspects,
+			Pi is Java-based, with Pi Cloud featuring a small number of platform-specific aspects,
 			largely around networking for machine instances. These currently work with CentOS / RedHat Linux.
 		</p>
 		<p>
-			For Cloud, Pi is deployed on Rocks Clusters, and uses Parascale shared storage.
+			The initial release of Pi Cloud was deployed on Rocks Clusters, and uses Parascale and Gluster as
+			the underlying distributed storage substrate.
 		</p>
 		
 		<h2>
 			Developing Pi Applications
 		</h2>
 		<p>
-			Developers familiar with prevalent server-side transaction processing programming models –
-			particularly from the Java community – will face several core concepts that may be unfamiliar, or
-			familiar in a different context. Here are some of the more prominent ones:
+			Developers coming to Pi with a background in prevalent server-side request / transaction
+			processing programming models typically find they have to 'get their head around' several
+			core concepts that may be only vaguely familiar, or familiar in a different context.
+			These commonly include: 
 		</p>
 		<ul>
 		    <li>
-		    	Processing paradigm - It may be helpful to think of Pi more as a workflow-type system rather
+		    	<b>Processing paradigm</b> - It may be helpful to think of Pi more as a workflow-type system rather
 		    	than a request-response type system. Pi uses message passing, however this only offers
 		    	best-effort delivery guarantees. Hence operations are typically handled through a series
 		    	of steps, each of which can be monitored to ensure successful completion and handoff to the
@@ -88,7 +97,7 @@
 		    	provides correlation identifiers and relevant helper APIs.
 		    </li>
 		    <li>
-		    	Asynchrony - With a few notable exceptions, all operations within Pi are asynchronous.
+		    	<b>Asynchrony</b> - With a few notable exceptions, all operations within Pi are asynchronous.
 		    	Methods that return a value do so by calling back an anonymous method (typically implemented
 		    	in Java as an anonymous instance of an interface defining that callback function). Most IO
 		    	events are currently delivered to Pi from a single worker thread from Pastry – for these events,
@@ -97,7 +106,7 @@
 		    	to be done in threads other than the thread of the received event.
 			</li>
 		    <li>
-		    	Data - Pi provides a distributed key-value data store, in the shape of a distributed hash
+		    	<b>Data</b> - Pi provides a distributed key-value data store, in the shape of a distributed hash
 		    	table (DHT), and APIs to access it. There are no locks and no transactions. Concurrenncy is
 		    	managed using an optimistic model – we read a record, update it, write it; if another write
 		    	happened between us reading the record and writing it, we repeat the read-update-write process.
@@ -112,23 +121,23 @@
 		      	Jackson framework annotations where non-trivial binding is required.
 			</li>
 		    <li>
-		    	Concurrency - Pi has no locks and no transactions. For managing concurrency around single-record
+		    	<b>Concurrency</b> - Pi has no locks and no transactions. For managing concurrency around single-record
 		    	updates, optimistic concurrencsy is used as described above. For updates across multiple records,
 		    	each record is updated separately. Failure is handled through a combination of compensation,
 		    	watching (see the watcher pattern) and inconsistency resolving logic, as appropriate.
 			</li>
 		    <li>
-		    	Idempotence - Operations in Pi should in general be idempotent. For instance, allocation of a
+		    	<b>Idempotence</b> - Operations in Pi should in general be idempotent. For instance, allocation of a
 		    	resource to a consumer should succeed if that resource has already been allocated to that consumer.
 		    	This makes applications more robust and enables recovery mechanisms based on re-running failing tasks.
 			</li>
 		    <li>
-		    	Polling and eventing - Pi applications often use both polling and eventing around a particular task
+		    	<b>Polling and eventing</b> - Pi applications often use both polling and eventing around a particular task
 		    	as a means of achieving improved resilience and failure recovery. Usually eventing is used to ensure
 		    	tasks are processed eagerly, while polling is used as a fallback, in the event of failure.
 			</li>
 		    <li>
-		    	Application coupling - P2P application design differs somewhat from traditional SOA or client server
+		    	<b>Application coupling</b> - P2P application design differs somewhat from traditional SOA or client server
 		    	design. P2p apps can be tightly coupled in the sense of sharing knowledge of and responsibility for
 		    	a resource or a piece of data. They should be thought of as components of a single system. However,
 		    	good practices around the design of local versus remote interfaces and interactions continue to
