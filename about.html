@@ -19,7 +19,7 @@
 		</p>
 		<p>
 			Pi is of course not alone in seeking to offer these capabilities. Rather than striving for
-			‘magical’ approach - 'just write your app, and we'll make it scale', the approach Pi takes
+			'magical' approach - 'just write your app, and we'll make it scale', the approach Pi takes
 			is to explicitly define a 'menu' of tradeoffs needed to achieve scale and resilience,
 			recommend patterns for implementing these tradeoffs, and provide APIs to facilitate
 			and guide that implementation. It is our belief that, when scale and resilience
@@ -84,45 +84,55 @@
 		<p>
 			Developers coming to Pi with a background in prevalent server-side request / transaction
 			processing programming models typically find they have to 'get their head around' several
-			core concepts that may be only vaguely familiar, or familiar in a different context.
+			core concepts that may well be familiar in a different context.
 			These commonly include: 
 		</p>
 		<ul>
 		    <li>
-		    	<b>Processing paradigm</b> - It may be helpful to think of Pi more as a workflow-type system rather
-		    	than a request-response type system. Pi uses message passing, however this only offers
-		    	best-effort delivery guarantees. Hence operations are typically handled through a series
-		    	of steps, each of which can be monitored to ensure successful completion and handoff to the
-		    	next step. Request-response type interactions are of course possible in this context, and Pi
-		    	provides correlation identifiers and relevant helper APIs.
+		    	<b>Processing paradigm</b> - It is typically helpful to think of the processing model
+		    	used by Pi as workflow-based rather than request-response based. Pi uses message passing,
+		    	however a consequence of its resilience needs is that any notion of parking messages on a
+		    	single (by definition unreliable) node for forwarding later will not do. Hence operations
+		    	that cannot be processed immediately, have a long processing time, or need to be handed
+		    	off to a remote peer for processing are represented as data, stored in the DHT at the
+		    	earliest opportunity, and their progress and completion is monitored by multiple peers
+		    	(see further below). In terms of how such operations are modelled, typical handling is
+		    	through a series of steps, each of which can, as just described, be monitored to ensure successful
+		    	completion and handoff to the next step. Request-response type interactions are of course
+		    	possible under this paradigm, and Pi provides correlation identifiers and relevant helper APIs.
 		    </li>
 		    <li>
-		    	<b>Asynchrony</b> - With a few notable exceptions, all operations within Pi are asynchronous.
-		    	Methods that return a value do so by calling back an anonymous method (typically implemented
-		    	in Java as an anonymous instance of an interface defining that callback function). Most IO
-		    	events are currently delivered to Pi from a single worker thread from Pastry – for these events,
-		    	it is essential that they are processed rapidly, without blocking, This programming model isn’t
-		    	unlike languages such as Javascript and Actionscript. In Pi, non-trivial processing tasks need
-		    	to be done in threads other than the thread of the received event.
+		    	<b>Asynchronous programming model</b> - Other than a small number of notable exceptions,
+		    	operations implemented within Pi follow the asynchronous, non-blocking paradigm that is
+		    	very similar to that used by libraries such as node.js and Event Machine, and browser
+		    	programming models used by Javascript and Actionscript. Results, events or errors are
+		    	returned via callbacks. IO and other events events are delivered to applications from a single
+		    	worker / event thread, so need to be processed rapidly, without blocking, with any processing
+		    	intensive activities needing to be explicitly done in a separate thread from a thread pool.
+		    	In Pi this is currently less than elegant due to usual clumsiness involved in implementing
+		    	anonymous methods and closures in Java; also due to a level of reliance on the developer's
+		    	ability to categorise tasks as 'fast enough' to be executed in the event thread (what if
+		    	the node itself is under load and things slow down?) or requiring a dip into the thread pool.
 			</li>
 		    <li>
-		    	<b>Data</b> - Pi provides a distributed key-value data store, in the shape of a distributed hash
-		    	table (DHT), and APIs to access it. There are no locks and no transactions. Concurrenncy is
-		    	managed using an optimistic model – we read a record, update it, write it; if another write
-		    	happened between us reading the record and writing it, we repeat the read-update-write process.
-		    	This provides massive scalability. Tradeoffs are around data consistency and expressiveness of
-		    	modeling data relationships.
+		    	<b>Data Storage</b> - Pi sits atop a distributed hashtable (DHT), acting as a distributed key-value
+		    	data store. There are no locks and no transactions. Concurrency is managed using an optimistic model
+		    	– we read a record, update it, write it; if another write happened between us reading the record
+		    	and writing it, we repeat the read-update-write process. This provides massive scalability.
+		    	Tradeoffs are of course around data consistency and expressiveness of modeling data relationships.
 		      	<br/>
-		      	A set of Pi applications (forming one or more services) will typically share a data model.
+		      	With Pi, a set of Pi applications (forming one or more services) will typically share a data model.
 		      	It is important to ensure that Pi data entities are robust in the presence of disparate versions
-		      	of Pi applications across nodes. For this reason, and for ease of binding to Java objects, Pi
-		      	uses JSON as its data interchange format of choice. Pi applications then define entities as
-		      	Java objects that implement the PiEntity interface (or extend the PiEntityBase class), and use
-		      	Jackson framework annotations where non-trivial binding is required.
+		      	of Pi applications across nodes. Current version of Pi puts some of this burden on the developer.
+		      	It also provides support for non-strict binding of JSON to Java objects, allowing the developer to
+		      	be explicit at a fine-grained (attribute) level about how liberal this binding is, e.g. what happens
+		      	if a node encounters an unknown field. Developers can also choose to version entities and implement
+		      	'dual writes' (both 'old' and 'new' version, with 'old' eventually retired) when needing to
+		      	implement changes to structure of data entities.
 			</li>
 		    <li>
 		    	<b>Concurrency</b> - Pi has no locks and no transactions. For managing concurrency around single-record
-		    	updates, optimistic concurrencsy is used as described above. For updates across multiple records,
+		    	updates, optimistic concurrency is used as described above. For updates across multiple records,
 		    	each record is updated separately. Failure is handled through a combination of compensation,
 		    	watching (see the watcher pattern) and inconsistency resolving logic, as appropriate.
 			</li>
@@ -130,19 +140,23 @@
 		    	<b>Idempotence</b> - Operations in Pi should in general be idempotent. For instance, allocation of a
 		    	resource to a consumer should succeed if that resource has already been allocated to that consumer.
 		    	This makes applications more robust and enables recovery mechanisms based on re-running failing tasks.
+		    	It requires correct modelling (workflows, state machines etc) of operations by the system designer.
 			</li>
 		    <li>
-		    	<b>Polling and eventing</b> - Pi applications often use both polling and eventing around a particular task
-		    	as a means of achieving improved resilience and failure recovery. Usually eventing is used to ensure
-		    	tasks are processed eagerly, while polling is used as a fallback, in the event of failure.
+		    	<b>Polling and Eventing</b> - Pi applications often use both polling and eventing around a particular task
+		    	as a means of achieving resilience and failure recovery. Usually eventing is used to ensure
+		    	tasks are processed eagerly, while polling is used as fallback in the event of failure.
 			</li>
 		    <li>
-		    	<b>Application coupling</b> - P2P application design differs somewhat from traditional SOA or client server
-		    	design. P2p apps can be tightly coupled in the sense of sharing knowledge of and responsibility for
-		    	a resource or a piece of data. They should be thought of as components of a single system. However,
-		    	good practices around the design of local versus remote interfaces and interactions continue to
-		    	apply, as does the need to ensure robustness against having disparate versions of each application
-		    	deployed on each node.
+		    	<b>Application Coupling</b> - P2P applications that together comprise a whole system require
+		    	design choices to be made around the level of coupling between those apps. Established design principles
+		    	from SOA and client-server around loose coupling, abstraction and responsibilities need to be supplemented
+		    	with the changes that P2P introduces - an inherently deliberately distributed nature of the whole
+		    	system and its apps means that it can make sense to tightly couple applications that together belong to a
+		    	single system, in the sense of sharing knowledge of and responsibility for a resource, a piece of DHT
+		    	data or a function. Of course, good practices around the design of local versus remote interfaces and
+		    	interactions continue to apply, as does the need to ensure robustness against having disparate versions
+		    	of each application deployed on each system node.
 		    </li>
 		</ul>
 		
@@ -601,7 +615,17 @@
 			activation checks, picking up a task from a task queue, or sending an anycast message to a set of
 			subscribers capable of taking over from the departed node.
 		</p>
-	</div>		
+		
+		TODO: tooling, experience
+		- worked! blown away by demo of pulling cable out
+		- development model
+		- DHT structure
+		- skipnet
+		- tooling
+		- subset would be nice - groups / spread
+		- cost of ownership / support 
+	</div>
+	
 	<script src="https://code.jquery.com/jquery.js"></script>
 	<script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 <body>
