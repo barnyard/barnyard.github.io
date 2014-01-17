@@ -1,13 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-	<title>Pi P2P</title>
-	<link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
-	<link rel="stylesheet" href="pi.css">
-</head>
-<body>
-	<div class="container">
-		<h1>About</h1>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Pi</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Pi</h1>
+        <p>Distributed Decentralised App Substrate</p>
+        
+        <p class="view"><a href="home.html">Home</a></p>
+		<p class="view"><a href="about.html">About</a></p>
+		<p class="view"><a href="code.html">Code</a></p>
+      </header>
+      <section>
 			
 		<h2>
 			The What and the Why
@@ -23,7 +38,8 @@
 			is to explicitly define a 'menu' of tradeoffs needed to achieve scale and resilience,
 			recommend patterns for implementing these tradeoffs, and provide APIs to facilitate
 			and guide that implementation. It is our belief that, when scale and resilience
-			matter, abstractions should be a means of convenience rather than blissful ignorance.   
+			matter, abstractions should be a transparent means of convenience rather than opaquely
+			hiding details that need to be understood as the system evolves.   
 		</p>
 		<p>
 			Pi Cloud is the first set of services developed on Pi. It provides de-facto standard
@@ -89,7 +105,7 @@
 		</p>
 		<ul>
 		    <li>
-		    	<b>Processing paradigm</b> - It is typically helpful to think of the processing model
+		    	<b>Processing Paradigm</b> - It is typically helpful to think of the processing model
 		    	used by Pi as workflow-based rather than request-response based. Pi uses message passing,
 		    	however a consequence of its resilience needs is that any notion of parking messages on a
 		    	single (by definition unreliable) node for forwarding later will not do. Hence operations
@@ -102,7 +118,7 @@
 		    	possible under this paradigm, and Pi provides correlation identifiers and relevant helper APIs.
 		    </li>
 		    <li>
-		    	<b>Asynchronous programming model</b> - Other than a small number of notable exceptions,
+		    	<b>Asynchronous Programming Model</b> - Other than a small number of notable exceptions,
 		    	operations implemented within Pi follow the asynchronous, non-blocking paradigm that is
 		    	very similar to that used by libraries such as node.js and Event Machine, and browser
 		    	programming models used by Javascript and Actionscript. Results, events or errors are
@@ -117,7 +133,7 @@
 		    <li>
 		    	<b>Data Storage</b> - Pi sits atop a distributed hashtable (DHT), acting as a distributed key-value
 		    	data store. There are no locks and no transactions. Concurrency is managed using an optimistic model
-		    	– we read a record, update it, write it; if another write happened between us reading the record
+		    	- we read a record, update it, write it; if another write happened between us reading the record
 		    	and writing it, we repeat the read-update-write process. This provides massive scalability.
 		    	Tradeoffs are of course around data consistency and expressiveness of modeling data relationships.
 		      	<br/>
@@ -165,27 +181,29 @@
 		<h3>1. Ring Creation and Initialisation</h3>
 		
 		<h4>
-			Ring initiator
+			Ring Initiator
 			<i>(How does a node start a new Pi ring?)</i>
 		</h4>
 		<p>
-			To join a ring, a Pi node needs to contact a node that is already in that ring. This allows it to
-			bootstrap itself, discover its place in the ring (based on its ID), and populate its initial leafset.
+			In Pi, system nodes are peers that form a DHT in a ring structure, enabling routing to and location of
+			resources. To join a ring, a Pi node goes through a bootstrapping step that starts with contacting a
+			node that is already in that ring. This allows it to discover its place in the ring (based on its
+			randomly generated 160-bit node ID), and populate its initial list of known peers.
 		</p>
 		<p>
-			Pi currently supports peer discovery based on a list of hostnames or IP addresses. This is a
-			configuration parameter. In time, Pi will likely support broadcast and other mechanisms too.
+			Pi currently supports peer discovery based on a list of known hostnames or IP addresses, with
+			intention to also support broadcast and other mechanisms.
 		</p>
 		<p>
-			When started, all nodes will attempt to join an existing Pi ring, by using one or more available
+			When started, all nodes attempt to join an existing Pi ring, by using one or more available
 			peer discovery mechanisms (see below). If this fails or times out, a node will by default not start
 			a new ring.
 		</p>
 		<p>
 			In order to create a new ring, a configuration flag that normally prevents nodes from starting new
 			rings needs to be disabled. This allows a node to start a new ring. Once a node has started a new
-			ring, other nodes can bootstrap off of it, inheriting its region and availability zone unless
-			configured otherwise.
+			ring, other nodes can bootstrap off of it, inheriting its properties where applicable (for instance,
+			region and availability zone in the case of Pi Cloud).
 		</p>
 
 		<h4>
@@ -194,19 +212,19 @@
 		</h4>
 		
 		<p>
-			Certain applications will require presence of one or more data items in the DHT in order to function.
+			Some applications require presence of one or more data items in the DHT in order to function.
 			Although it is possible to have applications create required data lazily if attempts to read them
 			fail, this makes it difficult to distinguish between data that becomes inaccessible due to a fault,
 			and runs the risk of creating multiple copies of the same entity.
 		</p>
 		<p>
 			Some examples of data items that may need seeding include entities used to determine whether or not
-			an application should be active on a certain node, records used for resource allocation, task queue
-			records, etc.
+			an application should be active on a certain node, records used for resource allocation, and task queue
+			records.
 		</p>
 		<p>
 			A seeder is simply a service that allows such records to be created in the DHT when a new ring has been
-			started. It usually performs a series of DHT put operations, using configuration data specified via the
+			started. It usually performs a series of DHT store operations, using configuration data specified via the
 			service interface.
 		</p>
 		<p>
@@ -223,14 +241,21 @@
 		</h4>
 		
 		<p>
-			Simply extend the appropriate Pi application base class. You can start with the default
-			Pi application base class, or use one of its extensions if additional functionality is
+			Developers simply extend the appropriate Pi application base class. There is a 'vanilla' Pi
+			application base class, as well as its extensions if additional functionality is
 			required - for instance:
 		</p>
 		<ul>
-		    <li>pub/sub support (anycast / broadcast sending and receiving)
-		    <li>external access to one or more services (assigning an address from a pool of addresses to active applications, and opening / closing access via iptables)
-		      etc.
+		    <li>
+		    	pub/sub support (anycast / broadcast sending and receiving)
+		    </li>
+		    <li>
+		    	external access to one or more services (assigning an address from a pool of addresses to
+		    	active applications, and opening / closing access via iptables)
+		    </li>
+		    <li>
+		      	etc.
+		     </li>
 		</ul>
 		<p>
 			Then define application activation strategy (see below) and implement handlers for all or some of the following:
@@ -240,10 +265,11 @@
 		    <li>message delivery and forward</li>
 		    <li>pub/sub events, such as receipt of anycast or broadcast messages</li>
 		    <li>application activation / passivation (becomeActive / becomePassive)</li>
-		    <li>handling of leafset updates (in effect node arrival / departure events)</li>
+		    <li>handling of peer list updates (in effect node arrival / departure events)</li>
 		</ul>		
 		<p>
-			Make your application a Spring bean, and have Spring inject required dependencies.
+			The current implementation of Pi recommends making each application a Spring bean, and having Spring
+			inject required dependencies.
 		</p>
 		
 		<h4>
@@ -253,29 +279,29 @@
 		<p>
 			Some applications will want to run only on a subset of nodes. Examples might include
 			applications that expose a service on one of N IP addresses, applications that perform some
-			heavy duty processing, or those that aggregate information.
+			intensive processing, or those that aggregate information.
 		</p>
 		<p>
 			An Application Activator provides a strategy that is used to determine whether or not
 			an application should be active on a particular node. The meaning of 'active' and 'passive'
 			are entirely application specific - indeed it is not uncommon in Pi for 'passive' applications
-			to still perform some basic functions like routing of messages that pass through them.
+			to still perform functions like monitoring and routing messages that pass through them.
 		</p>
 		<p>
-			Pi comes with three activators:
+			Pi currently comes with three activators:
 		</p>
 		<ul>
 		    <li>
-		    	the simplest is the always-on activator, which basically makes all application instances active
+		    	the simplest is the <b>always-on activator</b>, which basically makes all application instances active
 		    </li>
 		    <li>
-		    	the shared DHT record activator can be used to specify activation of N applications, each optionally
-		    	acquiring one of N resources upon activation. Activation state is stored in a DHT record which is
+		    	the <b>shared DHT record activator</b> can be used to specify activation of N applications, each optionally
+		    	acquiring one of N system resources upon activation. Activation state is stored in a DHT record which is
 		    	polled by applications, hence care must be taken to set polling frequency according to the overall
 		    	number of candidate nodes
 		    </li>
 		    <li>
-		    	the supernode activator will activate one of N applications. It differs from the shared DHT record
+		    	the <b>supernode activator</b> will activate one of N applications. It differs from the shared DHT record
 		    	activator in that activation is determined by whether or not a node is nearest to one or more of a
 		    	set of predetermined points in node id space (in other words, whether a node's id is closest to
 		    	one of a set of IDs determined by a function stored in the DHT).
@@ -289,8 +315,8 @@
 		<p>
 		
 		<h4>
-			Exposed service
-			<i>(JHow can I expose a service to external consumers?)</i>
+			Exposed Service
+			<i>(How can I expose a service to external consumers?)</i>
 		</h4>
 		<p>
 			Pi can automatically manage the exposure of an application via a set of IP addresses, across a range
@@ -304,94 +330,92 @@
 		</h3>
 		
 		<h4>
-			Distributed hash table (DHT)
+			Distributed Hashtable (DHT)
 			<i>(How do I store and retrieve persistent data in Pi?)</i>
 		</h4>
 		<p>
-			Pi provides an implementation of a DHT, a distributed key-value store for data storage.
+			Pi provides an implementation of a DHT, acting as a distributed key-value store.
 			Currently this is optimised for storage and retrieval of relatively 'small' data records.
-			Support fro append operations on records, with a view to gathering large amounts of data
-			for later indexing or processing, is coming soon.
+			Intention was to also provide support for <b>append</b> operations on entries, with a view to
+			supporting easy and efficient gathering of large amounts of data for later indexing or processing.
 		</p>
 		<p>
 			Pi DHT provides the following operations:
 		</p>
 		<ul>
 		    <li>
-		    	put, which replaces an existing record with a new one, just like a traditional
+		    	<b>put</b>, which replaces an existing record with a new one, just like a traditional
 		    	hashtable put operation
 		    </li>
 		    <li>
-		    	get, which, given a key, reads and returns the record stored against it - again this is
+		    	<b>get</b>, which, given a key, reads and returns the record stored against it - again this is
 		    	analogous to the get operation on a hashtable
 		    </li>
 		    <li>
-		    	update, which reads a record, delegates its update to the application, then writes the
-		    	updated record using optimistic concurrency management. This means that the logic that
+		    	<b>update</b>, which reads a record, delegates its update to the application, then writes the
+		    	updated record using optimistic concurrency control. This means that the logic that
 		    	updates an existing record may be invoked more than once, typically if a different update,
 		    	perhaps from a different application or node, occurred between the original record being
 		    	read and the updated record being written.
 		    </li>
 		</ul>
 		<p>
-			There is no delete operation due to the replicated and dynamic nature of a DHT. Applications
-			can however flag records as deleted and treat them as such.
+			There is no <b>delete</b> operation due to the replicated and dynamic nature of a DHT. Applications
+			can however add a 'tombstone' flag to mark records as deleted and treat them as such.
 		</p>
 		<p>
-			DHT APIs come in two flavours - asynchronous and synchronous (blocking). Asynchronous should
-			be used wherever possible. Blocking DHT operations should only be used in specific circumstances,
-			where there is 100% certainty that they will never be invoked from the Pi / Pastry event delivery
-			worked thread (aka 'selector thread'). Examples are DHT operations that are invoked from a
-			synchronous servlet, in the thread of a web server, as well as seeding operations invoked through
-			a synchronous API.
+			Pi's DHT API comes in asynchronous and synchronous (blocking) flavours. Asynchronous should
+			be used wherever possible. Blocking DHT operations are provided for convenience, but should only
+			be used where there is certainty that they will never be invoked from the event worker thread.
+			An example would be aDHT operation invoked from a web server thread whilst processing a request.
 		</p>
 		<p>
-			DHT records are stored on the node whose ID is the nearest to the ID of the key. Records being
-			written are typically replicated to one or more nodes adjacent to the nearest-ID node. How many
-			replicas are written in total, and how many replaces have to be written in order for a write to
-			be deemed successful, are configuration parameters of Pi that in effect express a tradeoff
-			between write availability and consistency.
+			In 'classic' DHT fashion, DHT records are stored on the node with node ID that is nearest to the
+			ID of the key. Records being written are typically replicated to one or more nodes adjacent (in
+			node ID space) to the nearest-ID node. How many replicas are written in total, and how many
+			replaces have to be written in order for a write to be deemed successful, are configuration
+			parameters of Pi that express a tradeoff between write availability and consistency.
 		</p>
 		<p>
-			Data records in the DHT have a set of HTTP-like headers that represent metadata describing the
-			record's ID, its URI (and thus, via the scheme, the type of the stored resource), content type,
+			Data records in the DHT are stored with a set of HTTP-like headers that represent metadata describing
+			the record's ID, its URI (and thus, via the scheme, the type of the stored resource), content type,
 			version and so forth.
 		</p>
 		<p>
 			In addition to using remote DHT APIs, each node can also 'scan' DHT data stored locally on that
 			node. This is very useful when data with certain properties - perhaps a record that has expired
-			in some way - needs to be found and acted upon in some way. It can also be used to index local
-			resources of a certain type, and publish the result to some set of supernodes to provide runtime
-			querying, search or reporting facilities. These local DHT access APIs should NOT however be used
-			to alter or update data.
+			in some way - needs to be found and acted upon in some way. There is also support for indexing local
+			resources of a given type, then publishing the result to some set of supernodes to provide runtime
+			querying, aggregation, search or reporting facilities. These local DHT access APIs are not used
+			for altering or updating data as this side-steps the ID-based scheme that drives data record location.
 		</p>
 		
 		<h4>
-			Entity identifiers and modelling
+			Entity Identifiers and Modelling
 			<i>(How do I model, identify and locate domain-specific entities stored in Pi?)</i>
 		</h4>
 		<p>
-			Pi mandates the use of a common data model for application entities - clearly there is a need
+			Pi mandates the use of a common data model for application entities - naturally there is a need
 			for applications on different nodes to be able to communicate, share data, and understand that data.
-			Furthermore, in general a large P2P network may consist of different versions of applications,
-			hence applications have to be robust for this, and in some cases code for multiple versions of a
-			given entity.
+			Furthermore, in general a large P2P network will consist of different versions of applications,
+			hence applications have to be robust to this, and in some cases code for multiple versions of a
+			given entity, as already indicated under Data Storage in the section on Developing Pi Applications. 
 		</p>
 		<p>
-			To support these requirements , Pi entities are modelled as Java objects that implement a
+			Pi entities are consequently modelled as Java objects that implement a
 			lightweight interface (PiEntity), serialised and stored as JSON. This provides a structured data
-			format, without imposing a rigid schema. Pi uses the Jackson library for binding Java objects to
-			JSON, and Jackson annotations can be used with Pi entities to provide custom bindings if required.
+			format, without imposing a rigid schema, allowing for a less rigid data processing model whilst
+			still allowing explicit structure that each application expects to be supported. Fine-grained
+			control over binding of JSON to Java is done through standard Java annotations.
 		</p>
 		<p>
 			Pi treats all instances of entities as resources, each with its own URI. The scheme of the URI
 			represents the type of the resource.
 		</p>
 		<p>
-			A Pi / Pastry ID for a resource - typically corresponding to its DHT key - can be determined
-			from the combination of the URI and the scope of that resource (availability zone, region or
-			global). Pi provides an id generator that will return the correct ID given this scope and
-			identifier information,
+			For Pi Cloud, there is an explicit mapping to Pi / DHT ID for a resource from the combination
+			of the URI and the scope of that resource (availability zone, region or global). An ID generator
+			function is thus provided to return the correct ID given this scope and identifier information.
 		</p>
 		
 		<h4>
@@ -399,11 +423,12 @@
 			<i>(How do I aggregate data, or find data matching certain criteria?)</i>
 		</h4>
 		<p>
-			Due to its decetralised nature, and support for basic data access operations only, search
-			and reporting can be a challenge.
+			Pi's decetralised nature and support for basic data access operations only lead to several
+			techniques for indexing, search, discovery and reporting, with required effort levels growing
+			with dataset size.
 		</p>
 		<p>
-			For finite-size data sets, where the size allows it, a single DHT record can be used, and
+			For small, limited-size data sets, a single DHT record can be used, and
 			can simply be searched or processed to generate reports.
 		</p>
 		<p>
@@ -423,6 +448,10 @@
 			Finally, where latency is not an issue, DHT records can be batch-processed for reporting,
 			indexing and other purposes.
 		</p>
+		<p>
+			These are all techniques that have been used with existing Pi applications. This list is
+			certainly not exhaustive however.
+		</p>
 		
 		<h4>
 			Caching
@@ -435,7 +464,7 @@
 			blocking and non-blocking DHT access APIs, with non-blocking preferred wherever possible.
 		</p>
 		<p>
-			Pi's cache implementation is backed by Ehcache.
+			Pi's current cache implementation is backed by Ehcache.
 		</p>
 		
 		<h3>
@@ -443,13 +472,14 @@
 		</h3>
 
 		<h4>
-			Message passing
+			Message Passing and Routing
 			<i>(How do I send a message from one node to another?)</i>
 		</h4>
 		<p>
 			Pi makes it easy to send messages from one node to another. All that is required is a
-			destination ID, which can be computed from a resource as described in the Data section. The
-			message will then be delivered to the node whose node ID is the nearest to this destination ID.
+			destination ID, which can be computed from a resource as described in the Data section and
+			provides a convenient location mechanism without requiring knowledge of the resource's address.
+			The message will be delivered to the node whose node ID is the nearest to this destination ID.
 		</p>
 		<p>
 			Pi messages typically consist of a destination ID, method (a CRUD verb) and a Pi entity being
@@ -459,14 +489,15 @@
 			(where applicable), and a transaction ID used to group related messages together.
 		</p>
 		<p>
-			This structure can be altered or replaced if required.
-		</p>
-		<p>
+			The Pi implementation provides convenience  
 			Messages are sent through a message context. A new message context can be created trivially
 			from a message context factory (an interface implemented by all Pi applications), or a message
 			context of a received message can be used to send a new message. The latter approach has the
 			advantage of keeping a consistent transaction ID between messages - thus related log messages
 			across a series of nodes can easily be identified.
+		</p>
+		<p>
+			This structure can be altered or replaced if required.
 		</p>
 		<p>
 			Note that Pi messaging is inherently unreliable. Although nodes do have a level of routing logic
@@ -524,15 +555,17 @@
 		
 		<h3>5. Resource Management</h3>
 		<h4>
-			Consumed resource registry
+			Consumed Resource Registry
 			<i>(How do I track the usage of a resource that may have multiple consumers and / or require
 			co-ordination across nodes?)</i>
 		</h4>
 		<p>
-			Certain applications need to track usage of resources such that an application instance
-			running on a particular node knows when a resource needs to be created or destroyed. This
-			becomes particularly important when that resource is scarce, or when duplicate instances of
-			the same resource are problematic.
+			Sometimes distributed applications, or different applications running on the same node, need to
+			manage the lifeycle of an resource, creating it on demand and destroying it when no longer
+			needed. This becomes particularly important when that resource is scarce, consumes other resources,
+			or when duplicate instances of the same resource are problematic. Examples from Pi Cloud include
+			network security group NATing (used by apps / VMs on multiple nodes) and network setup for VMs
+			(used by multiple apps).  
 		</p>
 		<p>
 			Pi provides a simple 'consumed resource registry' component, which allow applications to track
@@ -541,24 +574,23 @@
 		</p>
 		<p>
 			There is also an extended resource registry implementation, a 'cached consumed DHT resource
-			registry'. This is appropriate when the resource additionally has a DHT representation.
-			Upon registration, the DHT record is read and stored in memory; upon deregistration, it is
-			removed. Furthermore, it is possible to specify a resource refresh strategy. This enables the
-			triggering of a periodic refresh of the resource through reloading the DHT record, and allows
-			specific actions to be performed upon refresh. Additionally, each consumer can be 'watched',
-			periodically triggering specific application logic that can determine whether a particular
-			consumer still exists.
-		</p>
-		<p>
-			Cached resource records can be retrieved on demand, as can consumers for a specific resource,
-			and a list of resources of a certain type. This is essential when applications need to track
-			state in memory, avoiding the need for frequent DHT operations. Application design needs to be
-			such that a particular resource only ever has one 'owner' node - this is easily achieved by
-			allocating ownership based to node ID proximity to the ID of the resource.
+			registry'. This is appropriate when a resource is used across multiple nodes (as in the security
+			group scenario above). In this case, an entry in the DHT is used to track resource state.
+			Apps update and watch the DHT record to reflect resource lifecycle and if required track its
+			consumers. Each node tracks changes to that resource state via a resource
+			refresh strategy, for instance enabling the triggering of a periodic refresh of the resource
+			through reloading the DHT record, and allows specific actions to be performed upon refresh.
+			For fault tolerance, the semantics of the implementation also allow each consumer of a resource
+			to itself be probed (ping / heartbeats) to ensure that particular consumer still exists.
+			Cached resource records can be retrieved on demand, as can a list of consumers for a specific
+			resource, and a list of resources of a certain type. This is essential when applications need to track
+			state in memory, avoiding the need for frequent DHT operations. When a resource needs to be
+			allocated to a unique owner node, this is typically based on node ID proximity to the ID of the
+			resource name hash.
 		</p>
 		
 		<h4>
-			Subscriber resource allocation
+			Subscriber Resource Allocation
 			<i>(How do I allocate resources available across a set of nodes?)</i>
 		</h4>
 		<p>
@@ -573,19 +605,20 @@
 		</h3>
 		
 		<h4>
-			Task processing queues
+			Task Processing Queues
 			<i>(How do I capture a task or operation so that it can be retried if unsuccessful?)</i>
 		</h4>
 		<p>
-			Pi provides a means of storing details of pending tasks which can be carried out in an
-			idempotent fashion, and hence retired if a previous attempt to execute had an unsuccessful
+			Pi provides a means of storing details of pending operations (tasks) which can be carried out in
+			an idempotent fashion, and hence retired if a previous attempt to execute had an unsuccessful
 			or unknown outcome.
 		</p>
 		<p>
-			A Pi application can define one or more task processing queues, usually through seeding.
-			When a particular task needs to be performed, it is added to the appropriate queue. Instances
-			of that same application monitor the queue for any tasks that have become stale, i.e. can be
-			retried. A maximum number of retries can be set.
+			A Pi application can define one or more task processing queues, usually through seeding underlying
+			DHT records. When a task needs to be performed, it is added to the appropriate queue. Instances
+			of that same application monitor the queue for any tasks that have not been picked up or have
+			timed out (become stale) so can be retried. A maximum number of retries can be set before tasks
+			are reported as failed.
 		</p>
 		<p>
 			If the initial (or subsequent) execution of a task succeeds, the corresponding queue item is
@@ -593,7 +626,7 @@
 		</p>
 		
 		<h4>
-			Watchers / supervisors
+			Watchers / Supervisors
 			<i>(How do I detect and resolve anomalies resulting from failures or malfunctions?)</i>
 		</h4>
 		<p>
@@ -605,7 +638,7 @@
 		</p>
 		
 		<h4>
-			Eager node failure recovery
+			Eager Node Failure Recovery
 			<i>(How do I detect and act on a node failure in a timely manner?)</i>
 		</h4>
 		<p>
@@ -615,18 +648,53 @@
 			activation checks, picking up a task from a task queue, or sending an anycast message to a set of
 			subscribers capable of taking over from the departed node.
 		</p>
-		
+
+		TODO: rationale
+			over-engineered? we very quickly get to lots of compute / storage nodes
+			huge ambitions, tier 1 telco going into cloud and network / infrastructure services
+			challenge is really how one implements control layer - much of this needs to live on nodes
+			themselves for compute storage - look at our apps - network, VM instances, volumes, images etc
+			if you do distribute, choice is best of breed vs homogeneous
+			def need agent on each
+			dilemma would be decentralised vs centrailised
+			decentralisation gives better resilience
+			our problem domain simple - not huge load
+			DHTs niche but proven at scale in very demanding environments (bittorrent, skype)
+			we never had cascading outage (apart from that time we blew up JVMs across the cluster - but that was us :))
+			we had experience wtih established centralised approach, awful and could not scale
+			p2p absolutely does not absolve one of responsibility to consider system properties
 		TODO: tooling, experience
+		- 60,000 LoC, 110,000 tests
 		- worked! blown away by demo of pulling cable out
 		- development model
 		- DHT structure
 		- skipnet
 		- tooling
+		- logging / trobleshooting
 		- subset would be nice - groups / spread
 		- cost of ownership / support 
+		- releases
+		- cap theorem
+		- orphaned nodes - shutting down, state machine approach
+		- user DB (divided opinions - not unlike skype before MS
+		- processing - dd, instance creation - nice only helped so much, needed to queue / co-ordinate in app
+		- networking - back and forward network
+		
+		Refs
+		- pastry, kademlia
+		- commutative data types
+		- promise of gossip
+		- pss / t-man
+		- network - layer 2
+		- skipnet
+		- microbursts
 	</div>
 	
-	<script src="https://code.jquery.com/jquery.js"></script>
-	<script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-<body>
+	</section>
+	<footer>
+		<p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+	</footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+  </body>
 </html>

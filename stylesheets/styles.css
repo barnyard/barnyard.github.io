@@ -5,8 +5,6 @@ body {
   font-family: 'Courier New', Verdana, Arial;
   color:#777;
   font-weight:300;
-  background-image: url('../images/paper.png');
-  background-position: 50%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -100,7 +98,7 @@ img {
 }
 
 header {
-  width:270px;
+  width:200px;
   float:left;
   position:fixed;
 }
@@ -164,7 +162,7 @@ header ul a strong {
 }
 
 section {
-  width:500px;
+  width:600px;
   float:right;
   padding-bottom:50px;
 }

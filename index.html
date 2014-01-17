@@ -18,308 +18,49 @@
         <h1>Pi</h1>
         <p>Distributed Decentralised App Substrate</p>
         
-        <p class="view"><a href="https://github.com/barnyard">View My GitHub Profile</a></p>
-        <p class="view"><a href="http://barnyard.github.io/freepastry">Freepastry (distributed hash table)</a></p>
-        <p class="view"><a href="http://barnyard.github.io/p2p-core">p2p-core</a><p>
-        <p class="view"><a href="http://barnyard.github.io/p2p-build">p2p-build</a><p>
-        <p class="view"><a href="http://barnyard.github.io/pi-sss">pi-sss (simple storage service)</a><p>
-        <p class="view"><a href="http://barnyard.github.io/p2p-api">p2p-api (instance management)</a><p>
-        <p class="view"><a href="http://barnyard.github.io/p2p-imagemanager">p2p-imagemanager</a><p>
-        <p class="view"><a href="http://barnyard.github.io/p2p-volumemanager">p2p-volumemanager</a><p>
-        <p class="view"><a href="http://barnyard.github.io/p2p-networkmanager">p2p-networkmanager</a><p>
-        <p class="view"><a href="http://barnyard.github.io/p2p-instancemanager">p2p-instancemanager</a><p>
-        <p class="view"><a href="http://barnyard.github.io/pi-ops-website">pi-ops-website</a><p>
-
+        <p class="view"><a href="home.html">Home</a></p>
+		<p class="view"><a href="about.html">About</a></p>
+		<p class="view"><a href="code.html">Code</a></p>
       </header>
       <section>
-
-<h2>
-<a name="the-what-and-the-why" class="anchor" href="#the-what-and-the-why"><span class="octicon octicon-link"></span></a>The What and the Why</h2>
-
-<p>Pi is a software framework for the creation of highly scalable, highly robust software applications and services.</p>
-
-<p>Many products claim to offer these capabilities, usually ‘magically’ - 'just write your app, and we'll make it scale'. Pi is different in that it explicitly defines its own choice of tradeoffs needed to achieve scale and resilience, recommends patterns for implementing these tradeoffs, and provides APIs to facilitate and guide that implementation.</p>
-
-<p>Pi Cloud is the first set of services developed on Pi. It provides de-facto standard, Amazon-compatible infrastructure-as-a-service (IaaS) APIs to compute and storage services.</p>
-
-<p>The creation of Pi has been driven by the need to provide an IaaS platform to underpin BT’s cloud offering. This meant building a distributed system with a large number of nodes from the outset, as each node would only support a finite number of virtual machine instances, finite storage, and finite bandwidth. As an infrastructure platform, it also placed demanding requirements on the resilience.</p>
-
-<h2>
-<a name="anatomy-of-pi" class="anchor" href="#anatomy-of-pi"><span class="octicon octicon-link"></span></a>Anatomy of Pi</h2>
-
-<p>Pi has a distributed, decentralized architecture, as a way of achieving the necessary scale. Pi nodes – each with its own unique identifier - form a ring of peers (a structured p2p overlay), with each node tracking a set of peers (its ‘leaf set’). This organisation is very powerful in that it allows one node to route a message to another via a bounded number of intermediate nodes; thus by mapping resources (such as pieces of data or services) to identifiers, nodes can locate and access those resources without having to have specific knowledge (addresses, routing etc) of how to access them.</p>
-
-<p>The structured p2p overlay is currently provided by the Pastry library, which organizes nodes into a ring, provides message routing and delivery, and exposes message-related and node-related events to p2p applications.</p>
-
-<p>Above Pastry sits Pi Core, the p2p application framework that provides developer-friendly APIs for application creation, messaging, data access and management, and much more. It also abstracts Pastry away.</p>
-
-<p>Pi Cloud services are implemented as a series of Pi applications, starting with a common app that defines the shared data entities, followed by applications for network, volume, image, storage and management, and the API application which exposes the APIs. These applications are then packaged together to form a deployable artifact – in the case of Pi Cloud, a RPM package. This artifact is generally deployed on each node, and is run as a single process instance (JVM).</p>
-
-<p>Pi is written in Java, utilising the Spring Framework. There are certain platform-specific aspects, largely around networking for machine instances. These currently work with CentOS / RedHat Linux.</p>
-
-<p>For Cloud, Pi is deployed on Rocks Clusters, and uses Parascale shared storage.</p>
-
-<h1>
-<a name="developing-pi-applications" class="anchor" href="#developing-pi-applications"><span class="octicon octicon-link"></span></a>Developing Pi applications</h1>
-
-<p>Developers familiar with prevalent server-side transaction processing programming models – particularly from the Java community – will face several core concepts that may be unfamiliar, or familiar in a different context. Here are some of the more prominent ones:</p>
-
-<ul>
-<li>Processing paradigm - It may be helpful to think of Pi more as a workflow-type system rather than a request-response type system. Pi uses message passing, however this only offers best-effort delivery guarantees. Hence operations are typically handled through a series of steps, each of which can be monitored to ensure successful completion and handoff to the next step. Request-response type interactions are of course possible in this context, and Pi provides correlation identifiers and relevant helper APIs.</li>
-<li>Asynchrony - With a few notable exceptions, all operations within Pi are asynchronous. Methods that return a value do so by calling back an anonymous method (typically implemented in Java as an anonymous instance of an interface defining that callback function). Most IO events are currently delivered to Pi from a single worker thread from Pastry – for these events, it is essential that they are processed rapidly, without blocking, This programming model isn’t unlike languages such as Javascript and Actionscript. In Pi, non-trivial processing tasks need to be done in threads other than the thread of the received event.</li>
-<li>Data - Pi provides a distributed key-value data store, in the shape of a distributed hash table (DHT), and APIs to access it. There are no locks and no transactions. Concurrenncy is managed using an optimistic model – we read a record, update it, write it; if another write happened between us reading the record and writing it, we repeat the read-update-write process.
-This provides massive scalability. Tradeoffs are around data consistency and expressiveness of modeling data relationships.
-A set of Pi applications (forming one or more services) will typically share a data model. It is important to ensure that Pi data entities are robust in the presence of disparate versions of Pi applications across nodes. For this reason, and for ease of binding to Java objects, Pi uses JSON as its data interchange format of choice. Pi applications then define entities as Java objects that implement the PiEntity interface (or extend the PiEntityBase class), and use Jackson framework annotations where non-trivial binding is required.</li>
-<li>Concurrency - Pi has no locks and no transactions. For managing concurrency around single-record updates, optimistic concurrencsy is used as described above. For updates across multiple records, each record is updated separately. Failure is handled through a combination of compensation, watching (see the watcher pattern) and inconsistency resolving logic, as appropriate.</li>
-<li>Idempotence - Operations in Pi should in general be idempotent. For instance, allocation of a resource to a consumer should succeed if that resource has already been allocated to that consumer. This makes applications more robust and enables recovery mechanisms based on re-running failing tasks.</li>
-<li>Polling and eventing - Pi applications often use both polling and eventing around a particular task as a means of achieving improved resilience and failure recovery. Usually eventing is used to ensure tasks are processed eagerly, while polling is used as a fallback, in the event of failure.</li>
-<li>Application coupling - P2P application design differs somewhat from traditional SOA or client server design. P2p apps can be tightly coupled in the sense of sharing knowledge of and responsibility for a resource or a piece of data. They should be thought of as components of a single system. However, good practices around the design of local versus remote interfaces and interactions continue to apply, as does the need to ensure robustness against having disparate versions of each application deployed on each node.</li>
-</ul><h1>
-<a name="patterns-of-pi" class="anchor" href="#patterns-of-pi"><span class="octicon octicon-link"></span></a>Patterns of Pi</h1>
-
-<h2>
-<a name="ring-creation-and-initialisation" class="anchor" href="#ring-creation-and-initialisation"><span class="octicon octicon-link"></span></a>Ring creation and initialisation</h2>
-
-<h3>
-<a name="ring-initiator" class="anchor" href="#ring-initiator"><span class="octicon octicon-link"></span></a>Ring initiator</h3>
-
-<p>(How does a node start a new Pi ring?)</p>
-
-<p>To join a ring, a Pi node needs to contact a node that is already in that ring. This allows it to bootstrap itself, discover its place in the ring (based on its ID), and populate its initial leafset.</p>
-
-<p>Pi currently supports peer discovery based on a list of hostnames or IP addresses. This is a configuration parameter. In time, Pi will likely support broadcast and other mechanisms too.</p>
-
-<p>When started, all nodes will attempt to join an existing Pi ring, by using one or more available peer discovery mechanisms (see below). If this fails or times out, a node will by default not start a new ring.</p>
-
-<p>In order to create a new ring, a configuration flag that normally prevents nodes from starting new rings needs to be disabled. This allows a node to start a new ring. Once a node has started a new ring, other nodes can bootstrap off of it, inheriting its region and availability zone unless configured otherwise.</p>
-
-<h3>
-<a name="seeder" class="anchor" href="#seeder"><span class="octicon octicon-link"></span></a>Seeder</h3>
-
-<p>(How does a DHT get initialised with required data?)</p>
-
-<p>Certain applications will require presence of one or more data items in the DHT in order to function. Although it is possible to have applications create required data lazily if attempts to read them fail, this makes it difficult to distinguish between data that becomes inaccessible due to a fault, and runs the risk of creating multiple copies of the same entity.</p>
-
-<p>Some examples of data items that may need seeding include entities used to determine whether or not an application should be active on a certain node, records used for resource allocation, task queue records, etc.</p>
-
-<p>A seeder is simply a service that allows such records to be created in the DHT when a new ring has been started. It usually performs a series of DHT put operations, using configuration data specified via the service interface.</p>
-
-<p>In addition, a seeder may be used to initialise a new subset of nodes within an existing ring (for instance to create configuration for a specific environment or availability zone, for use by nodes within that environment), or to alter the settings of a previously seeded record.</p>
-
-<h1>
-<a name="applications" class="anchor" href="#applications"><span class="octicon octicon-link"></span></a>Applications</h1>
-
-<h2>
-<a name="pi-application" class="anchor" href="#pi-application"><span class="octicon octicon-link"></span></a>Pi application</h2>
-
-<p>(How do I create a Pi application?)</p>
-
-<p>Simply extend the appropriate Pi application base class. You can start with the default pi application base class, or use one of its extensions if additional functionality is required - for instance:</p>
-
-<ul>
-<li>pub/sub support (anycast / broadcast sending and receiving)</li>
-<li>external access to one or more services (assigning an address from a pool of addresses to active applications, and opening / closing access via iptables)
-etc.</li>
-</ul><p>Then define application activation strategy (see below) and implement handlers for all or some of the following:</p>
-
-<ul>
-<li>application startup / shutdown</li>
-<li>message delivery and forward</li>
-<li>pub/sub events, such as receipt of anycast or broadcast messages</li>
-<li>application activation / passivation (becomeActive / becomePassive)</li>
-<li>handling of leafset updates (in effect node arrival / departure events)</li>
-</ul><p>Make your application a Spring bean, and have Spring inject required dependencies.</p>
-
-<h2>
-<a name="application-activator" class="anchor" href="#application-activator"><span class="octicon octicon-link"></span></a>Application Activator</h2>
-
-<p>(How can I have an application be active on a subset of nodes in the p2p network?)</p>
-
-<p>Some applications will want to run only on a subset of nodes. Examples might include applications that expose a service on one of N IP addresses, applications that perform some heavy duty processing, or those that aggregate information.</p>
-
-<p>An Application Activator provides a strategy that is used to determine whether or not an application should be active on a particular node. The meaning of 'active' and 'passive' are entirely application specific - indeed it is not uncommon in Pi for 'passive' applications to still perform some basic functions like routing of messages that pass through them.</p>
-
-<p>Pi comes with three activators:</p>
-
-<ul>
-<li>the simplest is the always-on activator, which basically makes all application instances active</li>
-<li>the shared DHT record activator can be used to specify activation of N applications, each optionally acquiring one of N resources upon activation. Activation state is stored in a DHT record which is polled by applications, hence care must be taken to set polling frequency according to the overall number of candidate nodes</li>
-<li>the supernode activator will activate one of N applications. It differs from the shared DHT record activator in that activation is determined by whether or not a node is nearest to one or more of a set of predetermined points in node id space (in other words, whether a node's id is closest to one of a set of IDs determined by a function stored in the DHT).</li>
-</ul><p>It is additionally possible to specify basic exclusion rules between applications, such that an application is prevented from becoming active if some other specific application is already active. This may be desirable if, for instance, two applications may conflict in some way if run on the same node, or place high load on compute, network and / or storage resources on that node.</p>
-
-<h3>
-<a name="exposed-service" class="anchor" href="#exposed-service"><span class="octicon octicon-link"></span></a>Exposed service</h3>
-
-<p>(JHow can I expose a service to external consumers?)</p>
-
-<p>Pi can automatically manage the exposure of an application via a set of IP addresses, across a range of nodes. This is achieved by extending the base class that provides managed addressing capabilities for a Pi application, selecting the shared DHT record application activator, and seeding the relevant application record with appropriate addresses in the DHT.</p>
-
-<h1>
-<a name="data" class="anchor" href="#data"><span class="octicon octicon-link"></span></a>Data</h1>
-
-<h2>
-<a name="distributed-hash-table-dht" class="anchor" href="#distributed-hash-table-dht"><span class="octicon octicon-link"></span></a>Distributed hash table (DHT)</h2>
-
-<p>(How do I store and retrieve persistent data in Pi?)</p>
-
-<p>Pi provides an implementation of a DHT, a distributed key-value store for data storage. Currently this is optimised for storage and retrieval of relatively 'small' data records. Support fro append operations on records, with a view to gathering large amounts of data for later indexing or processing, is coming soon.</p>
-
-<p>Pi DHT provides the following operations:</p>
-
-<ul>
-<li>put, which replaces an existing record with a new one, just like a traditional hashtable put operation</li>
-<li>get, which, given a key, reads and returns the record stored against it - again this is analogous to the get operation on a hashtable</li>
-<li>update, which reads a record, delegates its update to the application, then writes the updated record using optimistic concurrency management. This means that the logic that updates an existing record may be invoked more than once, typically if a different update, perhaps from a different application or node, occurred between the original record being read and the updated record being written.</li>
-</ul><p>There is no delete operation due to the replicated and dynamic nature of a DHT. Applications can however flag records as deleted and treat them as such.</p>
-
-<p>DHT APIs come in two flavours - asynchronous and synchronous (blocking). Asynchronous should be used wherever possible. Blocking DHT operations should only be used in specific circumstances, where there is 100% certainty that they will never be invoked from the Pi / Pastry event delivery worked thread (aka 'selector thread'). Examples are DHT operations that are invoked from a synchronous servlet, in the thread of a web server, as well as seeding operations invoked through a synchronous API.</p>
-
-<p>DHT records are stored on the node whose ID is the nearest to the ID of the key. Records being written are typically replicated to one or more nodes adjacent to the nearest-ID node. How many replicas are written in total, and how many replaces have to be written in order for a write to be deemed successful, are configuration parameters of Pi that in effect express a tradeoff between write availability and consistency.</p>
-
-<p>Data records in the DHT have a set of HTTP-like headers that represent metadata describing the record's ID, its URI (and thus, via the scheme, the type of the stored resource), content type, version and so forth.</p>
-
-<p>In addition to using remote DHT APIs, each node can also 'scan' DHT data stored locally on that node. This is very useful when data with certain properties - perhaps a record that has expired in some way - needs to be found and acted upon in some way. It can also be used to index local resources of a certain type, and publish the result to some set of supernodes to provide runtime querying, search or reporting facilities. These local DHT access APIs should NOT however be used to alter or update data.</p>
-
-<h2>
-<a name="entity-identifiers-and-modelling" class="anchor" href="#entity-identifiers-and-modelling"><span class="octicon octicon-link"></span></a>Entity identifiers and modelling</h2>
-
-<p>(How do I model, identify and locate domain-specific entities stored in Pi?)</p>
-
-<p>Pi mandates the use of a common data model for application entities - clearly there is a need for applications on different nodes to be able to communicate, share data, and understand that data. Furthermore, in general a large P2P network may consist of different versions of applications, hence applications have to be robust for this, and in some cases code for multiple versions of a given entity.</p>
-
-<p>To support these requirements , Pi entities are modelled as Java objects that implement a lightweight interface (PiEntity), serialised and stored as JSON. This provides a structured data format, without imposing a rigid schema. Pi uses the Jackson library for binding Java objects to JSON, and Jackson annotations can be used with Pi entities to provide custom bindings if required.</p>
-
-<p>Pi treats all instances of entities as resources, each with its own URI. The scheme of the URI represents the type of the resource.</p>
-
-<p>A Pi / Pastry ID for a resource - typically corresponding to its DHT key - can be determined from the combination of the URI and the scope of that resource (availability zone, region or global). Pi provides an id generator that will return the correct ID given this scope and identifier information,</p>
-
-<h2>
-<a name="searching-and-indexing" class="anchor" href="#searching-and-indexing"><span class="octicon octicon-link"></span></a>Searching and indexing</h2>
-
-<p>(How do I aggregate data, or find data matching certain criteria?)</p>
-
-<p>Due to its decetralised nature, and support for basic data access operations only, search and reporting can be a challenge.</p>
-
-<p>For finite-size data sets, where the size allows it, a single DHT record can be used, and can simply be searched or processed to generate reports.</p>
-
-<p>Taking this a step further, a finite, known set of DHT records can be used to store data, and these can be indexed periodically to create / update a set of index records that can be used for searches. There will be a latency associated with indexed data.</p>
-
-<p>For queries that are known at development time, a search through records on the local node can be used, with the discovery of a matching record triggering some action.</p>
-
-<p>Where the query is not known until runtime, local DHT store can be examined, and data on any records of interest published to a set of supernodes for aggregation and querying.</p>
-
-<p>Finally, where latency is not an issue, DHT records can be batch-processed for reporting, indexing and other purposes.</p>
-
-<h2>
-<a name="caching" class="anchor" href="#caching"><span class="octicon octicon-link"></span></a>Caching</h2>
-
-<p>(How do I ensure DHT lookup results are reused?)</p>
-
-<p>DHT reads and writes can be expensive, hence caching becomes important early on. Pi provides blocking and non-blocking DHT cache access APIs, with both read-through and write-through capabilities. These should be used with the same constraints already described around the use of blocking and non-blocking DHT access APIs, with non-blocking preferred wherever possible.</p>
-
-<p>Pi's cache implementation is backed by Ehcache.</p>
-
-<h1>
-<a name="messaging" class="anchor" href="#messaging"><span class="octicon octicon-link"></span></a>Messaging</h1>
-
-<h2>
-<a name="message-passing" class="anchor" href="#message-passing"><span class="octicon octicon-link"></span></a>Message passing</h2>
-
-<p>(How do I send a message from one node to another?)</p>
-
-<p>Pi makes it easy to send messages from one node to another. All that is required is a destination ID, which can be computed from a resource as described in the Data section. The message will then be delivered to the node whose node ID is the nearest to this destination ID.</p>
-
-<p>Pi messages typically consist of a destination ID, method (a CRUD verb) and a Pi entity being sent. Optionally, a message can be sent to an application that is different from the sending application. Messages additionally contain elements that are generally not visible to the application, above all a unique message identifier, a correlation identifier for matching responses with requests (where applicable), and a transaction ID used to group related messages together.</p>
-
-<p>This structure can be altered or replaced if required.</p>
-
-<p>Messages are sent through a message context. A new message context can be created trivially from a message context factory (an interface implemented by all Pi applications), or a message context of a received message can be used to send a new message. The latter approach has the advantage of keeping a consistent transaction ID between messages - thus related log messages across a series of nodes can easily be identified.</p>
-
-<p>Note that Pi messaging is inherently unreliable. Although nodes do have a level of routing logic that improves robustness under node churn, sent messages are not guaranteed to arrive at their destination. Other mechanisms need to be used to ensure reliability.</p>
-
-<h2>
-<a name="publish-subscribe" class="anchor" href="#publish-subscribe"><span class="octicon octicon-link"></span></a>Publish-subscribe</h2>
-
-<p>(How can a set of nodes advertise a service or interest?)</p>
-
-<p>Pi supports the standard publish-subscribe paradigm. By leveraging properties of the p2p overlay, it is entirely decentralised and able to support them in a massively scalable manner. Topics are mapped to Pi IDs. Subscribers to a topic join that topic by adding themselves to a tree of subscribers, rooted at the node closest to the topic ID. Nodes wishing to publish to a topic do so by sending a message toward the topic ID; this is intercepted and handled en route by the first node to subscribed to that topic. If there are no subscribers, the message terminates at the topic ID node, where the 'no subscribers' condition can be handled.</p>
-
-<p>All of this is abstacted from Pi applications, which only have to worry about declaring that they wish to subscribe to or unsubscribe from a topic, and optionally handling the 'no subscribers' case.</p>
-
-<h2>
-<a name="anycast" class="anchor" href="#anycast"><span class="octicon octicon-link"></span></a>Anycast</h2>
-
-<p>(How do I send a message to one of a series of interested recipients?)</p>
-
-<p>Anycast involves sending a message to a topic, such that the message is processed sequentially, one node at a time. A node that receives an anycast message may process it without forwarding it onto other topic subscribers, alter and / or process it partially before forwarding, or forward it on without processing.</p>
-
-<p>Anycast messages can be sent 'directly' or via a randomly chosen intermediate node. The latter is useful when wanting to ensure that anycast messages sent from a particular node do not traverse the topic tree the same way, providing better distribution of messages across subscribers.</p>
-
-<p>Among other uses, anycast provides an effective, decentralised mechanism for finding nodes that can handle a certain request or supply a certain resource.</p>
-
-<h2>
-<a name="broadcast" class="anchor" href="#broadcast"><span class="octicon octicon-link"></span></a>Broadcast</h2>
-
-<p>(How do I send a message to a group of interested recipients?)</p>
-
-<p>An application can broadcast a message to a topic. Subscribers to a given topic will distribute the message to all known peers that have also subscribed to the topic. The message is in effect distributed throughout the topic node tree in parallel, making broadcast efficient.</p>
-
-<h1>
-<a name="resource-management" class="anchor" href="#resource-management"><span class="octicon octicon-link"></span></a>Resource management</h1>
-
-<h2>
-<a name="consumed-resource-registry" class="anchor" href="#consumed-resource-registry"><span class="octicon octicon-link"></span></a>Consumed resource registry</h2>
-
-<p>(How do I track the usage of a resource that may have multiple consumers and / or require co-ordination across nodes?)</p>
-
-<p>Certain applications need to track usage of resources such that an application instance running on a particular node knows when a resource needs to be created or destroyed. This becomes particularly important when that resource is scarce, or when duplicate instances of the same resource are problematic.</p>
-
-<p>Pi provides a simple 'consumed resource registry' component, which allow applications to track how many consumers a particular resource has, and thus determine when a resource needs to be created (first consumer registered) or removed (last consumer deregistered).</p>
-
-<p>There is also an extended resource registry implementation, a 'cached consumed dht resource registry'. This is appropriate when the resource additionally has a DHT representation. Upon registration, the DHT record is read and stored in memory; upon deregistration, it is removed. Furthermore, it is possible to specify a resource refresh strategy. This enables the triggering of a periodic refresh of the resource through reloading the DHT record, and allows specific actions to be performed upon refresh. Additionally, each consumer can be 'watched', periodically triggering specific application logic that can determine whether a particular consumer still exists.</p>
-
-<p>Cached resource records can be retrieved on demand, as can consumers for a specific resource, and a list of resources of a certain type. This is essential when applications need to track state in memory, avoiding the need for frequent DHT operations. Application design needs to be such that a particular resource only ever has one 'owner' node - this is easily achieved by allocating ownership based to node ID proximity to the ID of the resource.</p>
-
-<h2>
-<a name="subscriber-resource-allocation" class="anchor" href="#subscriber-resource-allocation"><span class="octicon octicon-link"></span></a>Subscriber resource allocation</h2>
-
-<p>(How do I allocate resources available across a set of nodes?)</p>
-
-<p>A highly scalable, decentralised scheme for resource allocation involves nodes that possess the given resource advertising its availability by subscribing to a topic. A client wishing to utilise that resource sends an anycast message to the topic. This is handled by one or more recipient nodes, which allocate the resource as appropriate.</p>
-
-<h1>
-<a name="fault-tolerance" class="anchor" href="#fault-tolerance"><span class="octicon octicon-link"></span></a>Fault tolerance</h1>
-
-<h2>
-<a name="task-processing-queues" class="anchor" href="#task-processing-queues"><span class="octicon octicon-link"></span></a>Task processing queues</h2>
-
-<p>(How do I capture a task or operation so that it can be retried if unsuccessful?)</p>
-
-<p>Pi provides a means of storing details of pending tasks which can be carried out in an idempotent fashion, and hence retired if a previous attempt to execute had an unsuccessful or unknown outcome.</p>
-
-<p>A Pi application can define one or more task processing queues, usually through seeding. When a particular task needs to be performed, it is added to the appropriate queue. Instances of that same application monitor the queue for any tasks that have become stale, i.e. can be retried. A maximum number of retries can be set.</p>
-
-<p>If the initial (or subsequent) execution of a task succeeds, the corresponding queue item is removed. If, however, it fails, the polling mechanism will ensure it gets retried.</p>
-
-<h2>
-<a name="watchers--supervisors" class="anchor" href="#watchers--supervisors"><span class="octicon octicon-link"></span></a>Watchers / supervisors</h2>
-
-<p>(How do I detect and resolve anomalies resulting from failures or malfunctions?)</p>
-
-<p>Pi applications can implement watcher components to monitor and rectify issues - anything from misconfiguration of the local node to data inconsistencies to consumer state monitoring. Pi provides a watcher service, which allows application-specific watchers to be registered for periodic execution. The granularity and frequency of each watcher can be whatever is appropriate for each application.</p>
-
-<h2>
-<a name="eager-node-failure-recovery" class="anchor" href="#eager-node-failure-recovery"><span class="octicon octicon-link"></span></a>Eager node failure recovery</h2>
-
-<p>(How do I detect and act on a node failure in a timely manner?)</p>
-
-<p>Pi delivers node arrival and departure events to applications. Among other things, this can be used to detect node failure, reported as a departure event, and trigger appropriate action. This can mean eagerly activating an existing recovery mechanism, for instance forcing application activation checks, picking up a task from a task queue, or sending an anycast message to a set of subscribers capable of taking over from the departed node.</p>
-      </section>
-      <footer>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
+		<h2>Introduction</h2>
+		<p>
+			The Pi project was an effort to create a massively scalable application substrate
+			for the development of Cloud and other applications and services, driven by the need
+			to support a proprietary cloud platform consisting of many thousands of machines
+			providing compute, storage and network services.
+		</p>
+		<p>
+			A fully functional, API-compatible clones of Amazon's EC2 and S3 services were created
+			and released in a 'private cloud' scenario.
+		</p>
+
+		<h2>Status</h2>
+		<p>
+			Strategic realignment and organisational seismics put a stop to the development effort
+			in mid-2011. Although Pi remains in use, it is effectively on life support.
+		</p>
+		<p>
+			The codebase was open-sourced in 2012 in an effort to extend its lifespan, also to
+			preserve and share the experiences and learnings from developing a platform with the
+			particular set of design goals.
+		</p>
+		
+		<h2>Can I use Pi?</h2>
+		<p>
+			The software has been in production use since 2011, however given its status you are
+			advised to look at currently active projects such as OpenStack.
+		</p>
+		<p>
+			At this stage, the open-sourced software stack is most likely to be useful as a reference
+			for anyone with an interest in or looking to build highly scalable infrastructure software
+			services.
+		</p>
+	</section>
+	<footer>
+		<p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+	</footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
-    
   </body>
 </html>
