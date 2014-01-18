@@ -25,22 +25,66 @@
       <section>
 			
 		<h2>
-			The What and the Why
+			Origins
 		</h2>
-		
 		<p>
-			Pi's core design goal was to provide a software substrate for the creation of highly
-			scalable, highly robust software applications and services.
+			Pi came about as a result of an (at the time) strong desire by a major global telco
+			to explore new, game-changing ways of delivering combined software and network services
+			in the cloud.
+		</p>
+		<p>
+			Clearly an interesting and demanding challenge, one that would stand or fall on ability to
+			<ol>
+			<li>rapidly develop and deploy entirely new infrastructure software services and capabilities,
+			<li>at scale,
+			<li>with resilience and service levels those of leading cloud service providers.
+			</ol>
+		</p>
+		<p>
+			Put together, these three corners of design space have little to make Mr Venn happy. Just the
+			initial goal of providing an EC2-compatible elastic compute platform for use internally meant
+			providing a way to deploy a distributed, resilient control and automation software layer
+			across many hundreds, even thousands of machines.
+		</p>
+		
+		<h2>Approach</h2>
+		<p>
+			In light of this, and our wider goals, it quickly became apparent that traditoinal, service-
+			oriented approaches were not going to cut it. The normally irresistible appeal of being
+			able to develop, deploy, evolve and scale multiple autonomous architectural components
+			with a high degree of autonomy was not going to cut it for our needs. This was low-level
+			stuff rather than isolated business services. We could not afford to solve common infrastructure
+			problems in different ways. We knew that growing to hundreds of engineers or adopting traditional
+			techniques for deploying and managing infrastructure services would be incompatible with
+			anything that had the word 'rapid' in it. 
+		</p> 
+		<p>
+			Thus the design goals focused on creating a generic software substrate for the development and
+			deployment highly scalable, highly robust software applications and services. This was not only
+			to provide application primitives such as communications, data storage and lifecycle support,
+			but also a consistent and easy-to-consume set of capabilities required to achieve scale and
+			resilience - load balancing, failover, dynamic resource management and allocation.
+		</p>
+		<p>
+			This became Pi, the name alluding to the infinite number of digits in its decimal representation. 
 		</p>
 		<p>
 			Pi is of course not alone in seeking to offer these capabilities. Rather than striving for
 			'magical' approach - 'just write your app, and we'll make it scale', the approach Pi takes
 			is to explicitly define a 'menu' of tradeoffs needed to achieve scale and resilience,
 			recommend patterns for implementing these tradeoffs, and provide APIs to facilitate
-			and guide that implementation. It is our belief that, when scale and resilience
-			matter, abstractions should be a transparent means of convenience rather than opaquely
-			hiding details that need to be understood as the system evolves.   
+			and guide that implementation. When scale and resilience matter, abstractions should be a
+			transparent means of convenience rather than opaquely hiding details that need to be
+			understood as the system evolves.   
 		</p>
+		<p>
+			we never had cascading outage (apart from that time we blew up JVMs across the cluster - but that was us :))
+			we had experience wtih established centralised approach, awful and could not scale
+			p2p absolutely does not absolve one of responsibility to consider system properties
+			startup 'like ...' except it works
+		</p>
+		
+		<h2>The Life of Pi</h2>
 		<p>
 			Pi Cloud is the first set of services developed on Pi. It provides de-facto standard
 			infrastructure-as-a-service (IaaS) compute and storage services API-compatible with
@@ -48,10 +92,7 @@
 			being when other similar offerings were woefully inadequate. 
 		</p>
 		<p>
-			Its creation was driven by the need to provide an IaaS platform to shape, evolve and
-			ultimately underpin the strategic ambitions of a major technology company seeking to offer
-			its customers first-rate networked software services. This meant building a distributed
-			system with a large number of nodes from the outset, as each node would only support a finite
+			This meant building a distributed system with a large number of nodes from the outset, as each node would only support a finite
 			number of virtual machine instances, finite storage, and finite bandwidth. As an
 			infrastructure platform, it also placed demanding requirements on the resilience.
 		</p>
@@ -60,9 +101,12 @@
 			Anatomy of Pi
 		</h2>
 		<p>
-			Naturally, Pi has a distributed, decentralized architecture, as a way of achieving these goals.
-			Its foundation borrows heavily from peer-to-peer and specifically distributed hashtable (DHT)
-			paradigms. Pi nodes - each with its own unique identifier - form a ring of peers (a structured p2p
+			The foundations of Pi's distributed, decentralized architecture, borrow heavily from peer-to-peer
+			and specifically distributed hashtable (DHT) paradigms, and several successful decentralised
+			Internet-scale deployments, most notably pre-Microsoft Skype and BitTorrent.
+		</p>
+		<p>
+			Pi nodes - each with its own unique identifier - form a ring of peers (a structured p2p
 			overlay), with each node tracking a set of peers. A core appeal of this organisation is that
 			it allows one node to route a message to another via a bounded number of intermediate nodes; thus by
 			mapping resources (such as data or services) to identifiers, nodes can locate and access
@@ -649,20 +693,6 @@
 			subscribers capable of taking over from the departed node.
 		</p>
 
-		TODO: rationale
-			over-engineered? we very quickly get to lots of compute / storage nodes
-			huge ambitions, tier 1 telco going into cloud and network / infrastructure services
-			challenge is really how one implements control layer - much of this needs to live on nodes
-			themselves for compute storage - look at our apps - network, VM instances, volumes, images etc
-			if you do distribute, choice is best of breed vs homogeneous
-			def need agent on each
-			dilemma would be decentralised vs centrailised
-			decentralisation gives better resilience
-			our problem domain simple - not huge load
-			DHTs niche but proven at scale in very demanding environments (bittorrent, skype)
-			we never had cascading outage (apart from that time we blew up JVMs across the cluster - but that was us :))
-			we had experience wtih established centralised approach, awful and could not scale
-			p2p absolutely does not absolve one of responsibility to consider system properties
 		TODO: tooling, experience
 		- 60,000 LoC, 110,000 tests
 		- worked! blown away by demo of pulling cable out
