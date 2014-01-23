@@ -18,7 +18,7 @@
         <h1>Pi</h1>
         <p>Distributed Decentralised App Substrate</p>
         
-        <p class="view"><a href="home.html">Home</a></p>
+        <p class="view"><a href="index.html">Home</a></p>
 		<p class="view"><a href="about.html">About</a></p>
 		<p class="view"><a href="code.html">Code</a></p>
       </header>
@@ -28,40 +28,64 @@
 			Origins
 		</h2>
 		<p>
-			Pi came about as a result of an (at the time) strong desire by a major global telco
-			to explore new, game-changing ways of delivering combined software and network services
-			in the cloud.
+			Pi came about as a result of a (at the time) strong desire by a major global telco
+			to explore new, game-changing ways of delivering combined software, infrastructure and
+			network services in the cloud.
 		</p>
 		<p>
-			Clearly an interesting and demanding challenge, one that would stand or fall on ability to
+			Clearly an ambitious and demanding challenge, it was one that would stand or fall on ability to
 			<ol>
-			<li>rapidly develop and deploy entirely new infrastructure software services and capabilities,
+			<li>rapidly develop and take to market entirely new infrastructure software services and capabilities,
 			<li>at scale,
-			<li>with resilience and service levels those of leading cloud service providers.
+			<li>with resilience and service levels those of leading cloud providers
+			<li>whilst remaining competitive in terms of total cost of ownership
 			</ol>
 		</p>
 		<p>
-			Put together, these three corners of design space have little to make Mr Venn happy. Just the
-			initial goal of providing an EC2-compatible elastic compute platform for use internally meant
-			providing a way to deploy a distributed, resilient control and automation software layer
-			across many hundreds, even thousands of machines.
+			Seeking to combine these four corners of design space is of course challenging and must
+			involve tradeoffs. The initial focus of our development effort - providing an EC2-compatible elastic
+			compute platform for internal use - provided ample opportunity to define, explore and evolve
+			these tradeoffs. It meant providing a way to deploy a distributed, resilient control
+			and automation software layer across many thousands of machines.
 		</p>
 		
-		<h2>Approach</h2>
+		<h2>
+			Approach
+		</h2>
 		<p>
-			In light of this, and our wider goals, it quickly became apparent that traditoinal, service-
-			oriented approaches were not going to cut it. The normally irresistible appeal of being
-			able to develop, deploy, evolve and scale multiple autonomous architectural components
-			with a high degree of autonomy was not going to cut it for our needs. This was low-level
-			stuff rather than isolated business services. We could not afford to solve common infrastructure
-			problems in different ways. We knew that growing to hundreds of engineers or adopting traditional
-			techniques for deploying and managing infrastructure services would be incompatible with
-			anything that had the word 'rapid' in it. 
-		</p> 
+			Architecturally, this context quickly led us to look beyond 'mainstream' platform design approaches.
+			There was a clear need for fine-grained control of huge amounts of distributed hardware, and co-ordination
+			of its resources. As a minimum, we were going to have to deploy a software agent on each of the
+			machines, so decisions became more focused on whether and to what extent to utilise this distributed
+			substrate for co-ordination and resource management. The alternative would have been to build a set of
+			centralised services using established service oriented patterns, storing and gathering data centrally
+			and controlling the resources remotely.
+		</p>
 		<p>
-			Thus the design goals focused on creating a generic software substrate for the development and
-			deployment highly scalable, highly robust software applications and services. This was not only
-			to provide application primitives such as communications, data storage and lifecycle support,
+			We opted for the former approach, fully aware that it would likely be more challenging to implement,
+			impose a generous helping of paradigm shifts upon its developers and maintainers, and be likely to get
+			us to the edge of uncharted waters. What ultimately pushed us down this path was the realisation that
+			a good balance between our four goals would depend on simplicity, automation and consistency. A significant
+			maintenance and management burden across would risk killing the commercial proposition, now or in the
+			future. Manual intervention was to be eliminated. We could not afford to solve problems
+			of resilience and scale in multiple ways or rely on costly specialised infrastructure. We were
+			keenly aware of the incompatibilities between fast time to market and a multitude of large teams or
+			traditional techniques for deploying and managing infrastructure services. 
+		</p>
+		<p>
+			And ultimately, our goal was to help our organisation change the game, not stick to the rules!
+		</p>
+		<p>
+			A number of succesfully deployed decentralised architectures, above all Skype, BitTorren and Amazon's
+			Dynamo, provided extremely useful reference points in design space, as well as an illustration
+			of what was possible not only in the data centre but also 'in the wild'. At the same time, Adobe were
+			committing to a very ambitious effort to create a dynamic peer-to-peer network for media streaming
+			across its near-ubiquitous Flash player install base.
+		</p>
+		<p>
+			Thus the design goals focused on creating a generic, common software substrate for the development and
+			deployment highly scalable, highly robust software applications and services. It had to not only
+			provide application platform primitives such as communications, data storage and lifecycle support,
 			but also a consistent and easy-to-consume set of capabilities required to achieve scale and
 			resilience - load balancing, failover, dynamic resource management and allocation.
 		</p>
@@ -76,12 +100,6 @@
 			and guide that implementation. When scale and resilience matter, abstractions should be a
 			transparent means of convenience rather than opaquely hiding details that need to be
 			understood as the system evolves.   
-		</p>
-		<p>
-			we never had cascading outage (apart from that time we blew up JVMs across the cluster - but that was us :))
-			we had experience wtih established centralised approach, awful and could not scale
-			p2p absolutely does not absolve one of responsibility to consider system properties
-			startup 'like ...' except it works
 		</p>
 		
 		<h2>The Life of Pi</h2>
@@ -698,18 +716,23 @@
 		- worked! blown away by demo of pulling cable out
 		- development model
 		- DHT structure
+		- what constitutes an outage - various levels - network, infra etc - all about health checks
 		- skipnet
 		- tooling
 		- logging / trobleshooting
 		- subset would be nice - groups / spread
 		- cost of ownership / support 
-		- releases
+		- releases cf FB
+		- nauman - cricket
 		- cap theorem
 		- orphaned nodes - shutting down, state machine approach
 		- user DB (divided opinions - not unlike skype before MS
 		- processing - dd, instance creation - nice only helped so much, needed to queue / co-ordinate in app
 		- networking - back and forward network
-		
+			we never had cascading outage (apart from that time we blew up JVMs across the cluster - but that was us :))
+			functional, state machines
+			p2p absolutely does not absolve one of responsibility to consider system properties
+
 		Refs
 		- pastry, kademlia
 		- commutative data types
@@ -718,6 +741,10 @@
 		- network - layer 2
 		- skipnet
 		- microbursts
+		- CRDTs
+		- dynamo
+		- skype
+		- bit torrent?
 	</div>
 	
 	</section>
