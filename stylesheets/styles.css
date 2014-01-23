@@ -34,6 +34,13 @@ h3, h4, h5, h6 {
   color:#494949;
 }
 
+h4 i {
+	font-weight: normal;
+	font-style: italic;
+	display: block;
+	color: #777;
+}
+
 a {
   color:#39c;
   font-weight:400;
