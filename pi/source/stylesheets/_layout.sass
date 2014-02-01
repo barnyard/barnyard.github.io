@@ -1,0 +1,21 @@
+.container
+  @include outer-container
+  background: $white
+  padding: 20px 0
+  .content
+    @include span-columns(9)
+  nav
+    @include span-columns(3)
+
+article
+  .container
+    padding-top: 90px
+
+body
+  background: $white
+  font-family: "Helvetica Neue", "Helvetica", "Arial"
+  font-size: 14px
+  line-height: 18px
+  -webkit-font-smoothing: antialiased
+  text-rendering: optimizeLegibility
+

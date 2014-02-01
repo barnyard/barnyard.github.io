@@ -1,0 +1,10 @@
+header
+  @include outer-container
+  .container
+    position: fixed
+    @include span-columns(12)
+    ul, li
+      display: inline
+    span
+      @extend h2
+    border-bottom: solid $red 1px
